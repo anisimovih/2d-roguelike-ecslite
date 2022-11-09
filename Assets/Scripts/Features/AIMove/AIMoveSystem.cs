@@ -6,8 +6,6 @@ using UnityEngine;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using Roguelike.Features.Animation;
-using Roguelike.Features.Audio;
 using Roguelike.Features.Components;
 using Roguelike.Features.Consumables;
 using Roguelike.Features.Health;
@@ -15,7 +13,7 @@ using Roguelike.Features.Input;
 using Roguelike.Features.Stats;
 using Roguelike.Features.Turn;
 using Roguelike.Extensions;
-using Roguelike.Scriptables;
+using Roguelike.Features.Actions;
 using Roguelike.Services;
 
 namespace Roguelike.Features.AIMove
@@ -25,8 +23,6 @@ namespace Roguelike.Features.AIMove
         private readonly EcsFilterInject<
             Inc<AIMoveComponent, ActiveTurnBasedComponent, TurnBasedComponent, PositionComponent>> 
             _aiMove = default;
-        
-        private readonly EcsCustomInject<Configuration> _config = default;
 
         private readonly EcsPoolInject<AIMoveComponent> _aiMovePool = default;
         private readonly EcsPoolInject<PositionComponent> _positionPool = default;
@@ -36,10 +32,7 @@ namespace Roguelike.Features.AIMove
         private readonly EcsPoolInject<HealthChangeEventComponent> _healthChangePool = default;
         private readonly EcsPoolInject<FoodComponent> _foodPool = default;
         private readonly EcsPoolInject<DamageComponent> _damagePool = default;
-        private readonly EcsPoolInject<AnimationPlayEventComponent> _animationPool = default;
-        private readonly EcsPoolInject<AudioPlayEventComponent> _audioPool = default;
-        private readonly EcsPoolInject<AudioResourcesComponentNew> _newAudioPool = default;
-        private readonly EcsPoolInject<AnimationKeysComponent> _animationResourcePool = default;
+        private readonly EcsPoolInject<ActionComponent> _actionPool = default;
 
         private readonly EcsCustomInject<GameBoardService> _gameBoardService = default;
 
@@ -114,9 +107,8 @@ namespace Roguelike.Features.AIMove
                     healthChange.HealthChangeAmount = -_damagePool.Value.Get(enemy).Points;
                 }
 
-                TryAddAnimationTrigger(enemy, AnimationType.ATTACK);
-                TryAddAnimationTrigger(player, AnimationType.RECEIVE_DAMAGE);
-                TryAddAudio(enemy, AudioClipType.ENEMY);
+                AddAction(player, GameAction.RECEIVE_DAMAGE);
+                AddAction(enemy, GameAction.ATTACK);
                 return false;
             }
 
@@ -124,32 +116,11 @@ namespace Roguelike.Features.AIMove
             return entitiesInSpot.Count == 1 && _foodPool.Value.Has(entitiesInSpot.First());
         }
 
-        private void TryAddAudio(int controllableId, AudioClipType audioClipType)
+        private void AddAction(int entity, GameAction gameAction)
         {
-            var world = _audioPool.Value.GetWorld();
-            var source = _newAudioPool.Value.Get(controllableId);
-            source.TypeToClips.TryGetValue(audioClipType, out var clips);
-            if (clips == null)
-            {
-                Debug.LogWarning($"entity {controllableId} has no {audioClipType} audio resource");
-                return;
-            }
-            ref var audio = ref _audioPool.Value.Add(world.NewEntity());
-            audio.Clips = clips;
-            audio.RandomizePitch = clips.Length > 1;
-        }
-
-        private void TryAddAnimationTrigger(int controllableId, AnimationType animationType)
-        {
-            ref var animationResource = ref _animationResourcePool.Value.Get(controllableId);
-            animationResource.TypeToKey.TryGetValue(animationType, out var animation);
-            if (animation == null)
-            {
-                Debug.LogWarning($"entity {controllableId} has no {animationType} animation key");
-                return;
-            }
-            ref var playerAnimation = ref _animationPool.Value.Add(controllableId);
-            playerAnimation.TriggerName = animation;
+            var actionPool = _actionPool.Value;
+            ref var action = ref actionPool.Has(entity) ? ref _actionPool.Value.Get(entity) : ref _actionPool.Value.Add(entity);
+            action.GameAction = gameAction;
         }
     }
 }

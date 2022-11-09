@@ -4,12 +4,12 @@ using System.Linq;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using Roguelike.Features.Audio;
 using Roguelike.Features.Components;
 using Roguelike.Features.Health;
 using Roguelike.Features.Input;
 using Roguelike.Features.Render;
 using Roguelike.Extensions;
+using Roguelike.Features.Actions;
 using Roguelike.Services;
 
 namespace Roguelike.Features.Consumables
@@ -24,8 +24,7 @@ namespace Roguelike.Features.Consumables
         private readonly EcsPoolInject<FoodComponent> _foodPool = default;
         private readonly EcsPoolInject<ResourceComponentNew> _resourceComponentPool = default;
         private readonly EcsPoolInject<HealthChangeEventComponent> _healthChangedPool = default;
-        private readonly EcsPoolInject<AudioPlayEventComponent> _audioPool = default;
-        private readonly EcsPoolInject<AudioResourcesComponentNew> _newAudioPool = default;
+        private readonly EcsPoolInject<ActionComponent> _actionPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -38,12 +37,8 @@ namespace Roguelike.Features.Consumables
                 var foodPool = _foodPool.Value;
                 int foodEntity = posEntities.FirstOrDefault(entity => foodPool.Has(entity));
                 if (foodEntity == default) continue;
-                
-                var world = _audioPool.Value.GetWorld();
-                var newAudio = _newAudioPool.Value.Get(foodEntity);
-                ref var audio = ref _audioPool.Value.Add(world.NewEntity());
-                audio.Clips = newAudio.TypeToClips[AudioClipType.FOOD];
-                audio.RandomizePitch = true;
+
+                AddAction(foodEntity, GameAction.CONSUME);
                 
                 var foodHeal = foodPool.Get(foodEntity).Points;
                 if (_healthChangedPool.Value.Has(movedEntity))
@@ -60,6 +55,13 @@ namespace Roguelike.Features.Consumables
                 _resourceComponentPool.Value.Del(foodEntity);
                 _gameBoardService.Value.Grid.Remove(position.X, position.Y, foodEntity);
             }
+        }
+        
+        private void AddAction(int entity, GameAction gameAction)
+        {
+            var actionPool = _actionPool.Value;
+            ref var action = ref actionPool.Has(entity) ? ref _actionPool.Value.Get(entity) : ref _actionPool.Value.Add(entity);
+            action.GameAction = gameAction;
         }
     }
 }

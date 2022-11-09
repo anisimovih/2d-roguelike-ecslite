@@ -4,7 +4,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.ExtendedSystems;
 using Leopotam.EcsLite.Unity.Ugui;
-
+using Roguelike.Features.Actions;
 using Roguelike.Features.AIMove;
 using Roguelike.Features.Animation;
 using Roguelike.Features.Audio;
@@ -86,8 +86,7 @@ namespace Roguelike
                 .DelHere<PositionChangeEventComponent>()
                 .DelHere<HealthChangeEventComponent>()
                 
-                .DelHere<AnimationPlayEventComponent>()
-                .DelHere<AudioPlayEventComponent>()
+                .DelHere<ActionComponent>()
                 .DelHere<SpriteChangeEventComponent>()
                 
                 .AddWorld(new EcsWorld(), Idents.Worlds.Events)

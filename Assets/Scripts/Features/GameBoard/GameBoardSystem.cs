@@ -22,6 +22,7 @@ using Roguelike.Features.Turn;
 using Roguelike.Features.WorldComponents;
 using Roguelike.Scriptables;
 using Roguelike.Extensions;
+using Roguelike.Features.Actions;
 using Roguelike.Services;
 
 namespace Roguelike.Features.GameBoard
@@ -43,7 +44,7 @@ namespace Roguelike.Features.GameBoard
         private readonly EcsPoolInject<FoodComponent> _foodPool = default;
         private readonly EcsPoolInject<TurnBasedComponent> _turnBasedPool = default;
         private readonly EcsPoolInject<AIMoveComponent> _aiMovePool = default;
-        private readonly EcsPoolInject<DamageComponent> _foodDamagerPool = default;
+        private readonly EcsPoolInject<DamageComponent> _damagePool = default;
         private readonly EcsPoolInject<SmoothMoveComponent> _smoothMovePool = default;
         private readonly EcsPoolInject<ExitComponent> _exitPool = default;
         private readonly EcsPoolInject<ControllableComponent> _controllablePool = default;
@@ -207,16 +208,18 @@ namespace Roguelike.Features.GameBoard
 
             ref var healthPool = ref _healthPool.Value.Add(player);
             healthPool.SetupHealth(configuration.START_FOOD, configuration.START_FOOD);
-            
+
+            var playerConfig = config.playerConfig;
             ref var animation = ref _animationResourcePool.Value.Add(player);
-            animation.TypeToKey = new Dictionary<AnimationType, string>();
-            animation.TypeToKey.Add(AnimationType.RECEIVE_DAMAGE, config.playerConfig.damageRecieveTriggerName);
-            
+            animation.TypeToKey = new Dictionary<GameAction, string>();
+            animation.TypeToKey.Add(GameAction.RECEIVE_DAMAGE, playerConfig.damageRecieveTriggerName);
+            animation.TypeToKey.Add(GameAction.CHOP, playerConfig.chopTriggerName);
+
             ref var audio = ref _audioResourcePool.Value.Add(player);
-            audio.TypeToClips = new Dictionary<AudioClipType, AudioClip[]>();
-            audio.TypeToClips.Add(AudioClipType.FOOTSTEP, _configuration.Value.playerConfig.footstepSounds);
-            audio.TypeToClips.Add(AudioClipType.CHOP, _configuration.Value.playerConfig.chopSounds);
-            audio.TypeToClips.Add(AudioClipType.DIE, _configuration.Value.playerConfig.dieSounds);
+            audio.TypeToClips = new Dictionary<GameAction, AudioClip[]>();
+            audio.TypeToClips.Add(GameAction.MOVE, playerConfig.footstepSounds);
+            audio.TypeToClips.Add(GameAction.CHOP, playerConfig.chopSounds);
+            audio.TypeToClips.Add(GameAction.DIE, playerConfig.dieSounds);
 
             return player;
         }
@@ -249,8 +252,8 @@ namespace Roguelike.Features.GameBoard
                 ref var foodComponent = ref _foodPool.Value.Add(e);
                 foodComponent.Points = foodConfig.healPoints;
                 ref var audio = ref _audioResourcePool.Value.Add(e);
-                audio.TypeToClips = new Dictionary<AudioClipType, AudioClip[]>();
-                audio.TypeToClips.Add(AudioClipType.FOOD, foodConfig.consumeSounds);
+                audio.TypeToClips = new Dictionary<GameAction, AudioClip[]>();
+                audio.TypeToClips.Add(GameAction.CONSUME, foodConfig.consumeSounds);
             });
         }
 
@@ -269,19 +272,19 @@ namespace Roguelike.Features.GameBoard
                 ref var aiMove = ref _aiMovePool.Value.Add(e);
                 aiMove.Target = player;
 
-                ref var foodDamagerComponent = ref _foodDamagerPool.Value.Add(e);
-                foodDamagerComponent.Points = enemyConfig.attackDamage;
+                ref var damage = ref _damagePool.Value.Add(e);
+                damage.Points = enemyConfig.attackDamage;
 
                 ref var smoothMoveComponent = ref _smoothMovePool.Value.Add(e);
                 smoothMoveComponent.MoveTime = config.TURN_DELAY;
 
                 ref var animation = ref _animationResourcePool.Value.Add(e);
-                animation.TypeToKey = new Dictionary<AnimationType, string>();
-                animation.TypeToKey.Add(AnimationType.ATTACK, enemyConfig.attackTriggerName);
+                animation.TypeToKey = new Dictionary<GameAction, string>();
+                animation.TypeToKey.Add(GameAction.ATTACK, enemyConfig.attackTriggerName);
 
                 ref var audio = ref _audioResourcePool.Value.Add(e);
-                audio.TypeToClips = new Dictionary<AudioClipType, AudioClip[]>();
-                audio.TypeToClips.Add(AudioClipType.ENEMY, enemyConfig.attackSounds);
+                audio.TypeToClips = new Dictionary<GameAction, AudioClip[]>();
+                audio.TypeToClips.Add(GameAction.ATTACK, enemyConfig.attackSounds);
             });
         }
     }

@@ -4,15 +4,16 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using Roguelike.Extensions;
+using Roguelike.Features.Actions;
 
 namespace Roguelike.Features.Audio
 {
     internal sealed class AudioSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<AudioResourcesComponentNew>> _audioFilter2;
-        private readonly EcsFilterInject<Inc<AudioPlayEventComponent>> _audioFilterNew;
+        private readonly EcsFilterInject<Inc<ActionComponent, AudioResourcesComponentNew>> _audioResourceActionFilter = default;
 
-        private readonly EcsPoolInject<AudioPlayEventComponent> _audioPoolNew = default;
+        private readonly EcsPoolInject<ActionComponent> _actionPool = default;
+        private readonly EcsPoolInject<AudioResourcesComponentNew> _audioResourcePool = default;
         
         private AudioSource _efxSource;
         private float lowPitchRange = .95f;
@@ -25,18 +26,12 @@ namespace Roguelike.Features.Audio
 
         public void Run(IEcsSystems systems)
         {
-            foreach (var entity in _audioFilterNew.Value)
+            foreach (var entity in _audioResourceActionFilter.Value)
             {
-                ref var audioComponent = ref _audioPoolNew.Value.Get(entity);
-                var audioClip = audioComponent.Clips.Random();
-
-                if (audioClip != null)
-                {
-                    Play(audioClip, audioComponent.RandomizePitch);
-                }
-
-                // only play once
-                _audioPoolNew.Value.GetWorld().DelEntity(entity);
+                var action = _actionPool.Value.Get(entity).GameAction;
+                _audioResourcePool.Value.Get(entity).TypeToClips.TryGetValue(action, out var audioClips );
+                if (audioClips == null || audioClips.Length == 0) continue;
+                Play(audioClips.Random(), true); // ToDo
             }
         }
 

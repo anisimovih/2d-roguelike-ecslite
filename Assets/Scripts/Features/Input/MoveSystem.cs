@@ -7,15 +7,12 @@ using Leopotam.EcsLite.Di;
 
 using Roguelike.Enums;
 using Roguelike.Features.AIMove;
-using Roguelike.Features.Animation;
-using Roguelike.Features.Audio;
 using Roguelike.Features.Components;
 using Roguelike.Features.Health;
-using Roguelike.Features.Render;
 using Roguelike.Features.Turn;
 using Roguelike.Features.WorldComponents;
-using Roguelike.Scriptables;
 using Roguelike.Extensions;
+using Roguelike.Features.Actions;
 using Roguelike.Services;
 
 namespace Roguelike.Features.Input
@@ -27,7 +24,6 @@ namespace Roguelike.Features.Input
         private readonly EcsFilterInject<Inc<ControllableComponent>> _controllableFilter = default;
         private readonly EcsFilterInject<Inc<GameOverComponent>> _gameOverFilter = default;
 
-        private readonly EcsCustomInject<Configuration> _config = default;
         private readonly EcsCustomInject<GameBoardService> _gameBoardService = default;
 
         private readonly EcsPoolInject<ActiveTurnBasedComponent> _activeTurnBasedPool = default;
@@ -37,11 +33,7 @@ namespace Roguelike.Features.Input
         private readonly EcsPoolInject<AIMoveComponent> _aiMovePool = default;
         private readonly EcsPoolInject<HealthComponent> _healthPool = default;
         private readonly EcsPoolInject<HealthChangeEventComponent> _healthChangeEventPool = default;
-        private readonly EcsPoolInject<ViewComponent> _viewPool = default;
-        private readonly EcsPoolInject<AnimationPlayEventComponent> _animationPlayEventPool = default;
-
-        private readonly EcsPoolInject<AudioPlayEventComponent> _audioPool = default;
-        private readonly EcsPoolInject<AudioResourcesComponentNew> _newAudioPool = default;
+        private readonly EcsPoolInject<ActionComponent> _actionPool = default;
 
         private static Vector2 ToVector(Movement movement)
         {
@@ -108,7 +100,7 @@ namespace Roguelike.Features.Input
 
                 if (canMove)
                 {
-                    AddAudioNew(controllableId, AudioClipType.FOOTSTEP);
+                    AddAction(controllableId, GameAction.MOVE);
                     
                     _gameBoardService.Value.Grid.Remove(currentPos.X, currentPos.Y, controllableId);
                     currentPos.SetPositions(newX, newY);
@@ -118,24 +110,6 @@ namespace Roguelike.Features.Input
 
                 _activeTurnBasedPool.Value.Del(controllableId);
             }
-        }
-
-        private void AddAudio(int controllableId, AudioClipType audioClipType)
-        {
-            var world = _positionChangedPool.Value.GetWorld();
-            var source = _newAudioPool.Value.Get(controllableId);
-            ref var audio = ref _audioPool.Value.Add(world.NewEntity());
-            audio.Clips = source.TypeToClips[audioClipType];
-            audio.RandomizePitch = audio.Clips.Length > 1;
-        }
-
-        private void AddAudioNew(int controllableId, AudioClipType audioClipType)
-        {
-            var world = _positionChangedPool.Value.GetWorld();
-            var source = _newAudioPool.Value.Get(controllableId);
-            ref var audio = ref _audioPool.Value.Add(world.NewEntity());
-            audio.Clips = source.TypeToClips[audioClipType];
-            audio.RandomizePitch = audio.Clips.Length > 1;
         }
 
         private bool PrepareMove(int player, ICollection<int> entitiesInSpot)
@@ -154,16 +128,8 @@ namespace Roguelike.Features.Input
                 {
                     ref var healthChange = ref _healthChangeEventPool.Value.Add(id);
                     healthChange.HealthChangeAmount = -1;
-                    AddAudioNew(player, AudioClipType.CHOP);
 
-                    if (_viewPool.Value.Has(player))
-                    {
-                        /*_animationPool.Value.Add(player);
-                        ref var animationComponent = ref _animationPool.Value.Get(player);
-                        animationComponent.Animation = _config.Value.playerConfig.chop;*/
-                        ref var animationPlay = ref _animationPlayEventPool.Value.Add(player);
-                        animationPlay.TriggerName = _config.Value.playerConfig.chopTriggerName;
-                    }
+                    AddAction(player, GameAction.CHOP);
                     
                     // nothing to do now that we've chopped
                     return false;
@@ -172,6 +138,13 @@ namespace Roguelike.Features.Input
             
             // otherwise we can move
             return true;
+        }
+
+        private void AddAction(int entity, GameAction gameAction)
+        {
+            var actionPool = _actionPool.Value;
+            ref var action = ref actionPool.Has(entity) ? ref _actionPool.Value.Get(entity) : ref _actionPool.Value.Add(entity);
+            action.GameAction = gameAction;
         }
     }
 }

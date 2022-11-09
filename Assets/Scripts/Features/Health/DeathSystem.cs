@@ -24,7 +24,6 @@ namespace Roguelike.Features.Health
             {
                 if (_healthPool.Value.Get(e).CurrentHealth > 0) continue;
 
-
                 if (_positionPool.Value.Has(e))
                 {
                     ref var positionPool = ref _positionPool.Value.Get(e);

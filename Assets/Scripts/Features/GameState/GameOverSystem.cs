@@ -1,7 +1,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
-using Roguelike.Features.Audio;
+using Roguelike.Features.Actions;
 using Roguelike.Features.Health;
 using Roguelike.Features.Input;
 using Roguelike.Features.WorldComponents;
@@ -15,8 +15,7 @@ namespace Roguelike.Features.GameState
 
         private readonly EcsPoolInject<HealthComponent> _healthPool = default;
         private readonly EcsPoolInject<GameOverComponent> _gameOverPool = default;
-        private readonly EcsPoolInject<AudioPlayEventComponent> _audioPool = default;
-        private readonly EcsPoolInject<AudioResourcesComponentNew> _newAudioPool = default;
+        private readonly EcsPoolInject<ActionComponent> _actionPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -31,19 +30,17 @@ namespace Roguelike.Features.GameState
                 if (healthPool.CurrentHealth <= 0)
                 {
                     _gameOverPool.Value.Add(_healthPool.Value.GetWorld().NewEntity());
-                    AddAudio(character, AudioClipType.DIE);
+                    AddAction(character, GameAction.DIE);
                     return;
                 }
             }
         }
 
-        private void AddAudio(int controllableId, AudioClipType audioClipType)
+        private void AddAction(int entity, GameAction gameAction)
         {
-            var world = _gameOverPool.Value.GetWorld();
-            var source = _newAudioPool.Value.Get(controllableId);
-            ref var audio = ref _audioPool.Value.Add(world.NewEntity());
-            audio.Clips = source.TypeToClips[audioClipType];
-            audio.RandomizePitch = audio.Clips.Length > 1;
+            var actionPool = _actionPool.Value;
+            ref var action = ref actionPool.Has(entity) ? ref _actionPool.Value.Get(entity) : ref _actionPool.Value.Add(entity);
+            action.GameAction = gameAction;
         }
     }
 }
