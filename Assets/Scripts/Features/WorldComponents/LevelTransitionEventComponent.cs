@@ -1,4 +1,6 @@
-﻿namespace Roguelike.Features.WorldComponents
+﻿using Roguelike.External.easyevents;
+
+namespace Roguelike.Features.WorldComponents
 {
-    internal struct LevelTransitionEventComponent { }
+    internal struct LevelTransitionEventComponent: IEventSingleton { }
 }

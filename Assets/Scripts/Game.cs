@@ -4,6 +4,8 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.ExtendedSystems;
 using Leopotam.EcsLite.Unity.Ugui;
+
+using Roguelike.External.easyevents;
 using Roguelike.Features.Actions;
 using Roguelike.Features.AIMove;
 using Roguelike.Features.Animation;
@@ -30,9 +32,10 @@ namespace Roguelike
     internal sealed class Game : MonoBehaviour
     {
         [SerializeField] private Configuration _configuration;
-        private EcsSystems _systems;
-
         private SceneData _sceneData;
+        
+        private EcsSystems _systems;
+        private EventsBus _eventsBus;
 
         private void Awake()
         {
@@ -43,11 +46,13 @@ namespace Roguelike
         {
             var world = new EcsWorld();
             _systems = new EcsSystems(world);
+            
             var gbs = new GameBoardService();
             var ls = new LevelService();
             var nvcs = new NestedViewContainerService();
             var tos = new TurnOrderService();
             var vcs = new ViewContainerService();
+            _eventsBus = new EventsBus();
 
             _systems
                 .Add(new InputSystem())
@@ -82,19 +87,22 @@ namespace Roguelike
                 .Add(new RenderPositionSystem())
                 .Add(new SmoothMoveSystem())
                 
-                .DelHere<MoveInputEventComponent>()
                 .DelHere<PositionChangeEventComponent>()
                 .DelHere<HealthChangeEventComponent>()
                 
                 .DelHere<ActionComponent>()
                 .DelHere<SpriteChangeEventComponent>()
                 
+                .Add(_eventsBus.GetDestroyEventsSystem()
+                    .IncSingleton<MoveInputEventComponent>()
+                )
+                
                 .AddWorld(new EcsWorld(), Idents.Worlds.Events)
 #if UNITY_EDITOR
                 .Add(new Leopotam.EcsLite.UnityEditor.EcsWorldDebugSystem())
                 .Add(new Leopotam.EcsLite.UnityEditor.EcsWorldDebugSystem(Idents.Worlds.Events))
 #endif
-                .Inject(gbs, tos, ls, nvcs, vcs, _configuration)
+                .Inject(gbs, tos, ls, nvcs, vcs, _eventsBus, _configuration)
                 .InjectUgui (_sceneData.UguiEmitter, Idents.Worlds.Events)
                 .Init();
         }
@@ -109,6 +117,7 @@ namespace Roguelike
             _systems?.Destroy();
             _systems?.GetWorld()?.Destroy();
             _systems = null;
+            _eventsBus.Destroy();
         }
     }
 }

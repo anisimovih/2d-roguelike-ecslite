@@ -2,6 +2,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using Roguelike.Extensions;
+using Roguelike.External.easyevents;
 using Roguelike.Features.Input;
 using Roguelike.Features.WorldComponents;
 using Roguelike.Scriptables;
@@ -11,20 +12,19 @@ namespace Roguelike.Features.Turn
 {
     public class NextTurnSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<GameOverComponent>> _gameOverFilter = default;
-        private readonly EcsFilterInject<Inc<MoveInputEventComponent>> _moveInputFilter = default;
-
         private readonly EcsPoolInject<SkipTurnComponent> _skipTurnPool = default;
         private readonly EcsPoolInject<ActiveTurnBasedComponent> _activeTurnBasedPool = default;
-        private readonly EcsPoolInject<NextTurnDelayComponent> _nextTurnDelayPool = default;
 
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
         private readonly EcsCustomInject<TurnOrderService> _turnOrderService = default;
         private readonly EcsCustomInject<Configuration> _configuration = default;
 
         public void Run(IEcsSystems systems)
         {
-            if (_moveInputFilter.Value.GetEntitiesCount() == 0) return;
-            if (_gameOverFilter.Value.GetEntitiesCount() > 0) return;
+            var eventsBus = _eventsBus.Value;
+            
+            if (eventsBus.HasEventSingleton<GameOverComponent>() 
+                || !eventsBus.HasEventSingleton<MoveInputEventComponent>()) return;
 
             var turnOrderService = _turnOrderService.Value;
 
@@ -34,10 +34,10 @@ namespace Roguelike.Features.Turn
                 return;
             }
 
-            Activate(turnOrderService);
+            Activate(turnOrderService, eventsBus);
         }
 
-        private void Activate(TurnOrderService turnOrderService)
+        private void Activate(TurnOrderService turnOrderService, EventsBus eventsBus)
         {
             var currentTurnNode = turnOrderService.TurnOrder.First;
             while (currentTurnNode != null)
@@ -55,8 +55,7 @@ namespace Roguelike.Features.Turn
                 currentTurnNode = currentTurnNode.Next;
             }
 
-            ref var nextTurnDelay = ref _nextTurnDelayPool.Value.Add(_nextTurnDelayPool.Value.GetWorld().NewEntity());
-            nextTurnDelay.SecondsLeft = _configuration.Value.TURN_DELAY;
+            eventsBus.NewEventSingleton<NextTurnDelayComponent>().SecondsLeft = _configuration.Value.TURN_DELAY;
         }
     }
 }

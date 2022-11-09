@@ -1,9 +1,9 @@
 ﻿using Roguelike.Enums;
+using Roguelike.External.easyevents;
 
 namespace Roguelike.Features.Input
 {
-    // Unique
-    internal struct MoveInputEventComponent
+    internal struct MoveInputEventComponent: IEventSingleton
     {
         public Movement Movement;
     }

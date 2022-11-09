@@ -12,6 +12,7 @@ using Roguelike.Features.Health;
 using Roguelike.Features.Turn;
 using Roguelike.Features.WorldComponents;
 using Roguelike.Extensions;
+using Roguelike.External.easyevents;
 using Roguelike.Features.Actions;
 using Roguelike.Services;
 
@@ -19,15 +20,12 @@ namespace Roguelike.Features.Input
 {
     public class MoveSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<LevelTransitionDelayComponent>> _levelTransitionDelayFilter = default;
-        private readonly EcsFilterInject<Inc<MoveInputEventComponent>> _moveInputFilter = default;
         private readonly EcsFilterInject<Inc<ControllableComponent>> _controllableFilter = default;
-        private readonly EcsFilterInject<Inc<GameOverComponent>> _gameOverFilter = default;
 
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
         private readonly EcsCustomInject<GameBoardService> _gameBoardService = default;
 
         private readonly EcsPoolInject<ActiveTurnBasedComponent> _activeTurnBasedPool = default;
-        private readonly EcsPoolInject<MoveInputEventComponent> _moveInputPool = default;
         private readonly EcsPoolInject<PositionComponent> _positionPool = default;
         private readonly EcsPoolInject<PositionChangeEventComponent> _positionChangedPool = default;
         private readonly EcsPoolInject<AIMoveComponent> _aiMovePool = default;
@@ -53,17 +51,16 @@ namespace Roguelike.Features.Input
 
         public void Run(IEcsSystems systems)
         {
-            var moveInputCount = _moveInputFilter.Value.GetEntitiesCount();
-            if (_gameOverFilter.Value.GetEntitiesCount() > 0
+            var eventsBus = _eventsBus.Value;
+            
+            if (!eventsBus.HasEventSingleton<MoveInputEventComponent>(out var moveInput)
+                || eventsBus.HasEventSingleton<GameOverComponent>()
                 || _controllableFilter.Value.GetEntitiesCount() == 0
-                || _levelTransitionDelayFilter.Value.GetEntitiesCount() > 0
-                || moveInputCount == 0)
+                || eventsBus.HasEventSingleton<LevelTransitionDelayComponent>())
             {
                 // ignore input
                 return;
             }
-
-            var moveInput = _moveInputPool.Value.Get(_moveInputFilter.Value.GetRawEntities()[0]);
 
             foreach (var controllableId in _controllableFilter.Value)
             {

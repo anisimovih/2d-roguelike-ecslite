@@ -1,6 +1,8 @@
-﻿namespace Roguelike.Features.WorldComponents
+﻿using Roguelike.External.easyevents;
+
+namespace Roguelike.Features.WorldComponents
 {
-    internal struct LevelTransitionDelayComponent
+    internal struct LevelTransitionDelayComponent: IEventSingleton
     {
         public float SecondsLeft;
     }

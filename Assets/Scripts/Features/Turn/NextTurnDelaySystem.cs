@@ -2,25 +2,26 @@ using UnityEngine;
 
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
+using Roguelike.External.easyevents;
 using Roguelike.Features.WorldComponents;
 
 namespace Roguelike.Features.Turn
 {
     public class NextTurnDelaySystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<NextTurnDelayComponent>> _nextTurnDelayCFilter = default;
-
-        private readonly EcsPoolInject<NextTurnDelayComponent> _nextTurnDelayCPool = default;
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
 
         public void Run(IEcsSystems systems)
         {
-            var nextTurnDelayCPool = _nextTurnDelayCPool.Value;
-            foreach (var entity in _nextTurnDelayCFilter.Value)
+            var eventsBus = _eventsBus.Value;
+            
+            if (!eventsBus.HasEventSingleton<NextTurnDelayComponent>()) return;
+            
+            ref var nextTurnDelay = ref eventsBus.GetEventBodySingleton<NextTurnDelayComponent>();
+            nextTurnDelay.SecondsLeft -= Time.deltaTime;
+            if (nextTurnDelay.SecondsLeft <= 0)
             {
-                ref var nextTurnDelay = ref nextTurnDelayCPool.Get(entity);
-                nextTurnDelay.SecondsLeft -= Time.deltaTime;
-                if (nextTurnDelay.SecondsLeft <= 0)
-                    nextTurnDelayCPool.Del(entity);
+                eventsBus.DestroyEventSingleton<NextTurnDelayComponent>();
             }
         }
     }

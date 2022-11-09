@@ -1,6 +1,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
+using Roguelike.External.easyevents;
 using Roguelike.Features.Components;
 using Roguelike.Features.Input;
 using Roguelike.Features.WorldComponents;
@@ -13,10 +14,10 @@ namespace Roguelike.Features.Exit
         private readonly EcsFilterInject<Inc<PositionChangeEventComponent, ControllableComponent>> _charPositionChangedFilter = default;
         private readonly EcsFilterInject<Inc<ExitComponent>> _exitFilter = default;
 
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
         private readonly EcsCustomInject<LevelService> _levelService = default;
 
         private readonly EcsPoolInject<PositionComponent> _positionPool = default;
-        private readonly EcsPoolInject<LevelTransitionEventComponent> _levelTransitionPool = default;
 
         public void Run(IEcsSystems systems)
         {
@@ -31,7 +32,7 @@ namespace Roguelike.Features.Exit
                     if (charPos.Equals(exitPos))
                     {
                         _levelService.Value.Level += 1;
-                        _levelTransitionPool.Value.Add(positionPool.GetWorld().NewEntity());
+                        _eventsBus.Value.NewEventSingleton<LevelTransitionEventComponent>();
                         return;
                     }
                 }

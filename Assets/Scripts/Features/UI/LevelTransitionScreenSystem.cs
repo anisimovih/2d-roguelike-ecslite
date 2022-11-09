@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 using Leopotam.EcsLite.Unity.Ugui;
-
+using Roguelike.External.easyevents;
 using Roguelike.Features.WorldComponents;
 using Roguelike.Scriptables;
 using Roguelike.Services;
@@ -13,15 +13,9 @@ namespace Roguelike.Features.UI
 {
     public class LevelTransitionScreenSystem : IEcsInitSystem, IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<GameOverComponent>> _gameOverFilter = default;
-        private readonly EcsFilterInject<Inc<LevelTransitionEventComponent>> _levelTransitionEventFilter = default;
-        private readonly EcsFilterInject<Inc<LevelTransitionDelayComponent>> _levelTransitionDellayFilter = default;
-
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
         private readonly EcsCustomInject<LevelService> _levelService = default;
         private readonly EcsCustomInject<Configuration> _configService = default;
-
-        private readonly EcsPoolInject<LevelTransitionDelayComponent> _levelTransitionDelayPool = default;
-        private readonly EcsPoolInject<LevelTransitionEventComponent> _levelTransitionEventPool = default;
         
         [EcsUguiNamed (Idents.Ui.LevelTransition)]
         private readonly Text _levelTransition = default;
@@ -30,38 +24,32 @@ namespace Roguelike.Features.UI
 
         public void Init(IEcsSystems systems)
         {
-            var levelTransitionEventPool = _levelTransitionEventPool.Value;
-            levelTransitionEventPool.Add(levelTransitionEventPool.GetWorld().NewEntity());
+            _eventsBus.Value.NewEventSingleton<LevelTransitionDelayComponent>();
         }
         
         public void Run(IEcsSystems systems)
         {
-            if (_gameOverFilter.Value.GetEntitiesCount() > 0)
+            var eventsBus = _eventsBus.Value;
+            
+            if (eventsBus.HasEventSingleton<GameOverComponent>())
             {
                 EnableScreenWithText($"After {_levelService.Value.Level} days, you starved.");
                 return;
             }
             
-            var levelTransitionEventFilter = _levelTransitionEventFilter.Value;
-            var levelTransitionDelayFilter = _levelTransitionDellayFilter.Value;
-            if (levelTransitionEventFilter.GetEntitiesCount() != 0)
+            if (eventsBus.HasEventSingleton<LevelTransitionEventComponent>())
             {
-                var levelTransitionEntity = levelTransitionEventFilter.GetRawEntities()[0];
-                ref var levelTransitionDelay = ref _levelTransitionDelayPool.Value.Add(levelTransitionEntity);
-                levelTransitionDelay.SecondsLeft = _configService.Value.LEVEL_TRANSITION_DELAY;
-                _levelTransitionEventPool.Value.Del(levelTransitionEntity);
+                eventsBus.NewEventSingleton<LevelTransitionDelayComponent>().SecondsLeft = _configService.Value.LEVEL_TRANSITION_DELAY;;
+                eventsBus.DestroyEventSingleton<LevelTransitionEventComponent>();
                 EnableScreenWithText($"Day {_levelService.Value.Level}");
             }
-            else if (levelTransitionDelayFilter.GetEntitiesCount() != 0)
+            else if (eventsBus.HasEventSingleton<LevelTransitionDelayComponent>())
             {
-                var levelTransitionEntity = levelTransitionDelayFilter.GetRawEntities()[0];
-                var levelTransitionDelayPool = _levelTransitionDelayPool.Value;
-                ref var levelTransitionDelayComponent = ref levelTransitionDelayPool.Get(levelTransitionEntity);
-                levelTransitionDelayComponent.SecondsLeft -= Time.deltaTime;
-                
-                if (levelTransitionDelayComponent.SecondsLeft <= 0)
+                ref var levelTransitionDelay = ref eventsBus.GetEventBodySingleton<LevelTransitionDelayComponent>();
+                levelTransitionDelay.SecondsLeft -= Time.deltaTime;
+                if (levelTransitionDelay.SecondsLeft <= 0)
                 {
-                    levelTransitionDelayPool.Del(levelTransitionEntity);
+                    eventsBus.DestroyEventSingleton<LevelTransitionDelayComponent>();
                     DisableScreen();
                 }
             }

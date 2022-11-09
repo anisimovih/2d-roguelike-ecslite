@@ -6,6 +6,7 @@ using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
 using Roguelike.Enums;
+using Roguelike.External.easyevents;
 using Roguelike.Features.WorldComponents;
 using Roguelike.Services;
 
@@ -13,25 +14,20 @@ namespace Roguelike.Features.Input
 {
     public class InputSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<MoveInputEventComponent>> _moveInputFilter = default;
-        private readonly EcsFilterInject<Inc<NextTurnDelayComponent>> _smoothMoveInProgressFilter = default;
-
-        private readonly EcsPoolInject<MoveInputEventComponent> _moveInputPool = default;
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
 
         public void Run(IEcsSystems systems)
         {
-            if (_moveInputFilter.Value.GetEntitiesCount() != 0) return;
-            if (_smoothMoveInProgressFilter.Value.GetEntitiesCount() != 0) return;
+            var eventsBus = _eventsBus.Value;
+            
+            if (eventsBus.HasEventSingleton<MoveInputEventComponent>() 
+                || eventsBus.HasEventSingleton<NextTurnDelayComponent>()) return;
             
             int vertical = Mathf.RoundToInt(UnityEngine.Input.GetAxisRaw(Idents.Input.VerticalAxis));
             int horizontal = Mathf.RoundToInt(UnityEngine.Input.GetAxisRaw(Idents.Input.HorizontalAxis));
             if (horizontal != 0 || vertical != 0)
             {
-                var movement = ToMovement(horizontal, vertical);
-                var moveInputPool = _moveInputPool.Value;
-                int entity = moveInputPool.GetWorld().NewEntity();
-                ref var moveComponent = ref moveInputPool.Add(entity);
-                moveComponent.Movement = movement;
+                eventsBus.NewEventSingleton<MoveInputEventComponent>().Movement = ToMovement(horizontal, vertical);
             }
         }
         

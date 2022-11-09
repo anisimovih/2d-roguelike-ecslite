@@ -19,19 +19,20 @@ using Roguelike.Features.SmoothMove;
 using Roguelike.Features.Sprite;
 using Roguelike.Features.Stats;
 using Roguelike.Features.Turn;
-using Roguelike.Features.WorldComponents;
 using Roguelike.Scriptables;
 using Roguelike.Extensions;
+using Roguelike.External.easyevents;
 using Roguelike.Features.Actions;
+using Roguelike.Features.WorldComponents;
 using Roguelike.Services;
 
 namespace Roguelike.Features.GameBoard
 {
     internal sealed class GameBoardSystem : IEcsInitSystem, IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<LevelTransitionEventComponent>> _levelTransitionEventFilter = default;
         private readonly EcsFilterInject<Inc<DeleteOnExitComponent>> _deleteOneExitFilter = default;
 
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
         private readonly EcsCustomInject<Configuration> _configuration = default;
         private readonly EcsCustomInject<GameBoardService> _gameBoardService = default;
         private readonly EcsCustomInject<LevelService> _levelService = default;
@@ -65,7 +66,7 @@ namespace Roguelike.Features.GameBoard
 
         public void Run(IEcsSystems systems)
         {
-            if (_levelTransitionEventFilter.Value.GetEntitiesCount() == 0) return;
+            if (!_eventsBus.Value.HasEventSingleton<LevelTransitionEventComponent>()) return;
 
             // delete previous elements
             foreach (var entity in _deleteOneExitFilter.Value)

@@ -1,6 +1,7 @@
 using Leopotam.EcsLite;
 using Leopotam.EcsLite.Di;
 
+using Roguelike.External.easyevents;
 using Roguelike.Features.Actions;
 using Roguelike.Features.Health;
 using Roguelike.Features.Input;
@@ -10,16 +11,17 @@ namespace Roguelike.Features.GameState
 {
     internal sealed class GameOverSystem : IEcsRunSystem
     {
-        private readonly EcsFilterInject<Inc<GameOverComponent>> _gameOverFilter;
         private readonly EcsFilterInject<Inc<ControllableComponent, HealthChangeEventComponent>> _characterHealthChangedFilter;
+        
+        private readonly EcsCustomInject<EventsBus> _eventsBus = default;
 
         private readonly EcsPoolInject<HealthComponent> _healthPool = default;
-        private readonly EcsPoolInject<GameOverComponent> _gameOverPool = default;
         private readonly EcsPoolInject<ActionComponent> _actionPool = default;
 
         public void Run(IEcsSystems systems)
         {
-            if (_gameOverFilter.Value.GetEntitiesCount() > 0) return;
+            var events = _eventsBus.Value;
+            if (events.HasEventSingleton<GameOverComponent>()) return;
 
             var characterHealthChangedFilter = _characterHealthChangedFilter.Value;
             if (characterHealthChangedFilter.GetEntitiesCount() == 0) return;
@@ -29,7 +31,7 @@ namespace Roguelike.Features.GameState
                 ref var healthPool = ref _healthPool.Value.Get(character);
                 if (healthPool.CurrentHealth <= 0)
                 {
-                    _gameOverPool.Value.Add(_healthPool.Value.GetWorld().NewEntity());
+                    events.NewEventSingleton<GameOverComponent>();
                     AddAction(character, GameAction.DIE);
                     return;
                 }
