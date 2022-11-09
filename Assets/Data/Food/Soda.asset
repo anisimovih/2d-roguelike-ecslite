@@ -14,6 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 110520, guid: 46e8bf4bf645a47e3ae1b60c7e18418c, type: 3}
   consumeSounds:
-  - {fileID: 8300000, guid: d6371d0847313e04ab64b800bfbb2729, type: 3}
-  - {fileID: 8300000, guid: 5ab53e504ebe89946b9a73b8a22d1ac6, type: 3}
+  - {fileID: 8300000, guid: 062161c1897a54088a5430f8c197e1b8, type: 3}
   healPoints: 20

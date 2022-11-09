@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Player
   m_EditorClassIdentifier: 
   prefab: {fileID: 146652, guid: 28b53fc28d3a140c392f0e2d919f9de1, type: 3}
-  chop: {fileID: 7400000, guid: b1e7ecc239aec4292a421108d3884268, type: 2}
-  damageRecieve: {fileID: 7400000, guid: bb6a8b9e76955449ea0a724eb706705d, type: 2}
+  chopTriggerName: playerChop
+  damageRecieveTriggerName: playerHit
   footstepSounds:
   - {fileID: 8300000, guid: 892962212a4b74d1c9f578a3b6ea6439, type: 3}
   - {fileID: 8300000, guid: a826bc3d758db43d6ae9caf415b63d1d, type: 3}

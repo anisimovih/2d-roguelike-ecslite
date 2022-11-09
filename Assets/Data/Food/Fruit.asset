@@ -15,5 +15,4 @@ MonoBehaviour:
   prefab: {fileID: 110520, guid: ad25a4e752915438e9f55a35bedacf1f, type: 3}
   consumeSounds:
   - {fileID: 8300000, guid: 1cb61f83d60374c7389bb547431919e3, type: 3}
-  - {fileID: 8300000, guid: 062161c1897a54088a5430f8c197e1b8, type: 3}
   healPoints: 10

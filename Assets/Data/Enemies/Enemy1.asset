@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefab: {fileID: 195068, guid: ebfba08a213d34c46ba2b1947aeaea83, type: 3}
   attackDamage: 10
-  attack: {fileID: 7400000, guid: d27b42c7b05ae47b8a5357d81d590f01, type: 2}
+  attackTriggerName: enemyAttack
   attackSounds:
   - {fileID: 8300000, guid: 0db8cac2749584a009540aa5671ee80d, type: 3}
   - {fileID: 8300000, guid: 114514a3b3697484ebaa08f7fbf842d3, type: 3}

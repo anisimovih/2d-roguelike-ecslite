@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8fb47d99c28244e2ae22b5ae2c576e43, type: 3}
   m_Name: Obstacle_2
   m_EditorClassIdentifier: 
-  prefab: {fileID: 0}
+  prefab: {fileID: 110520, guid: b86334000bc0f47ba8dd33ea88cfcdb1, type: 3}
   damagedImage: {fileID: 21300098, guid: fbe1e7b94bb1a4a099d5bcb15a00141c, type: 3}

@@ -18,7 +18,7 @@ MonoBehaviour:
   ENEMY_COUNT_MULTIPLIER: 1
   TURN_DELAY: 0.3
   LEVEL_TRANSITION_DELAY: 1.5
-  START_FOOD: 5
+  START_FOOD: 100
   FOOD_LOST_PER_TURN: 1
   exit: {fileID: 110520, guid: cb0f3020bafec423aa31d0e491c4b811, type: 3}
   floors:
